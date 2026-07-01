@@ -97,9 +97,6 @@
   .qbtn .num{color:var(--gold-soft);font-weight:700;font-size:13px;min-width:14px}
   .qbtn.back{border-left-color:var(--wa-sub);color:var(--wa-sub);font-size:13px}
   .qbtn .price{margin-left:auto;color:var(--gold-soft);font-weight:600;font-size:13px}
-  .qbtn .lock{margin-left:auto;color:var(--gold-soft);font-weight:600;font-size:11.5px;opacity:.85;letter-spacing:.3px}
-  .qbtn.locked{border-left-color:#6b5a2e}
-  .qbtn.locked:hover{background:#33414a}
   .textrow{display:flex;gap:8px;align-items:center}
   .textrow input{
     flex:1;background:#2a3942;border:none;border-radius:22px;padding:11px 16px;
@@ -121,7 +118,7 @@
     <div class="avatar">R</div>
     <div class="h-info">
       <div class="h-name">Cachaça Remedin</div>
-      <div class="h-status"><b>online</b> · responde na hora</div>
+      <div class="h-status"><b>online</b> · Zé Remedin no balcão</div>
     </div>
     <button class="restart" onclick="resetFlow()" title="Recomeçar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
@@ -136,45 +133,51 @@
 const BRL = n => 'R$ ' + n.toFixed(2).replace('.', ',');
 const now = () => { const d = new Date(); return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'); };
 
+/* Catálogo completo do v6 — preços PF / PJ (2 L PET tem preço fixo e é exclusivo PJ) */
 const PRODUCTS = [
-  { id:'prata', nome:'Remedin Prata', serie:'Série Prata · sem madeira',
+  { id:'prata', nome:'Remedin Prata', serie:'Série Prata · sem madeira · 38%',
     desc:'A mais pura e versátil. Sem passagem por madeira, guarda o frescor da cana.',
-    aroma:'cana fresca, caldo de cana', sabor:'leve, seco, limpo e macio',
-    ideal:'caipirinha, drinks, churrasco',
-    volumes:[{l:'50 ml',p:12.50},{l:'200 ml',p:35.00},{l:'500 ml',p:65.00},{l:'2 L (PET)',p:100.00}] },
-  { id:'ouro', nome:'Remedin Ouro', serie:'Série Ouro · carvalho europeu, 2 anos',
+    aroma:'cana fresca, caldo de cana', sabor:'leve, seco, limpo e macio', ideal:'caipirinha, drinks, churrasco',
+    volumes:[{l:'50 ml',pf:12.50,pj:8.00},{l:'200 ml',pf:35.00,pj:18.00},{l:'500 ml',pf:65.00,pj:45.00},{l:'2 L (PET)',pf:100.00,pj:100.00,pet:true}] },
+  { id:'ouro', nome:'Remedin Ouro', serie:'Série Ouro · carvalho europeu, 2 anos · 38%',
     desc:'A amiga do dia a dia. Macia, equilibrada e levemente amadeirada.',
-    aroma:'mel, baunilha, cana madura', sabor:'macio, equilibrado, levemente adocicado',
-    ideal:'churrasco, queijos, rabo de galo',
-    volumes:[{l:'50 ml',p:12.56},{l:'200 ml',p:35.00},{l:'500 ml',p:65.00}] },
-  { id:'jequitiba', nome:'Remedin Jequitibá-Rosa', serie:'Premium · madeira brasileira',
+    aroma:'mel, baunilha, cana madura', sabor:'macio, equilibrado, levemente adocicado', ideal:'churrasco, queijos, rabo de galo',
+    volumes:[{l:'50 ml',pf:12.50,pj:9.00},{l:'200 ml',pf:35.00,pj:20.00},{l:'500 ml',pf:65.00,pj:45.00},{l:'2 L (PET)',pf:100.00,pj:100.00,pet:true}] },
+  { id:'jequitiba', nome:'Remedin Jequitibá-Rosa', serie:'Premium · madeira brasileira · 38%',
     desc:'Elegante e delicada. O jequitibá preserva a identidade da cana sem mascarar.',
-    aroma:'cana fresca, notas herbais, toque floral', sabor:'leve, elegante, final suave',
-    ideal:'degustação, presentes, drinks premium',
-    volumes:[{l:'50 ml',p:15.00},{l:'750 ml',p:110.00}] },
-  { id:'amburana', nome:'Remedin Amburana', serie:'Premium · "pau doce"',
+    aroma:'cana fresca, notas herbais, toque floral', sabor:'leve, elegante, final suave', ideal:'degustação, presentes, drinks premium',
+    volumes:[{l:'50 ml',pf:15.00,pj:9.00},{l:'750 ml',pf:110.00,pj:79.00},{l:'2 L (PET)',pf:150.00,pj:150.00,pet:true}] },
+  { id:'amburana', nome:'Remedin Amburana', serie:'Premium · "pau doce" · 38%',
     desc:'Aromática e cheia de brasilidade. Notas marcantes de especiarias doces.',
-    aroma:'canela, baunilha, especiarias doces', sabor:'macio, adocicado, especiado',
-    ideal:'sobremesas, queijos, carne de porco',
-    volumes:[{l:'50 ml',p:15.00},{l:'750 ml',p:110.00}] },
-  { id:'jatoba', nome:'Remedin Jatobá-do-Cerrado', serie:'Extra Premium · madeira nativa',
+    aroma:'canela, baunilha, especiarias doces', sabor:'macio, adocicado, especiado', ideal:'sobremesas, queijos, carne de porco',
+    volumes:[{l:'50 ml',pf:15.00,pj:9.00},{l:'750 ml',pf:110.00,pj:79.00},{l:'2 L (PET)',pf:150.00,pj:150.00,pet:true}] },
+  { id:'jatoba', nome:'Remedin Jatobá-do-Cerrado', serie:'Extra Premium · madeira nativa · 38%',
     desc:'A melhor do Centro-Oeste. Intensa, robusta, conectada ao Cerrado.',
-    aroma:'madeira intensa, chocolate amargo, frutas vermelhas', sabor:'encorpado, aveludado, marcante',
-    ideal:'carnes vermelhas, queijos maturados, charutos',
-    volumes:[{l:'50 ml',p:15.00},{l:'750 ml',p:150.00}] },
-  { id:'extra', nome:'Remedin Extra Premium', serie:'Extra Premium · 4 anos carvalho francês',
+    aroma:'madeira intensa, chocolate amargo, frutas vermelhas', sabor:'encorpado, aveludado, marcante', ideal:'carnes vermelhas, queijos maturados, charutos',
+    volumes:[{l:'50 ml',pf:15.00,pj:9.00},{l:'750 ml',pf:150.00,pj:90.00}] },
+  { id:'extra', nome:'Remedin Extra Premium', serie:'Extra Premium · 4 anos carvalho francês · 38%',
     desc:'Para beber com calma. O perfil mais nobre e persistente da Remedin.',
-    aroma:'madeira elegante, baunilha, mel, caramelo', sabor:'complexo, macio, final longo',
-    ideal:'presentes especiais, celebrações, degustação pura',
-    volumes:[{l:'750 ml',p:210.00}] },
-  { id:'defumada', nome:'Remedin Defumada', serie:'Extra Premium · 1ª defumada do Brasil',
+    aroma:'madeira elegante, baunilha, mel, caramelo', sabor:'complexo, macio, final longo', ideal:'presentes especiais, celebrações, degustação pura',
+    volumes:[{l:'750 ml',pf:130.00,pj:120.00}] },
+  { id:'defumada', nome:'Remedin Defumada', serie:'Extra Premium · 1ª defumada do Brasil · 38%',
     desc:'A primeira cachaça defumada do Brasil. Perfil intenso, criada pro fogo.',
-    aroma:'defumado, madeira tostada, barbecue', sabor:'marcante, seco, final defumado',
-    ideal:'churrasco, costela, brisket, charutos',
-    volumes:[{l:'50 ml',p:20.00},{l:'200 ml',p:75.00},{l:'750 ml',p:250.00},{l:'2 L (PET)',p:300.00}] },
+    aroma:'defumado, madeira tostada, barbecue', sabor:'marcante, seco, final defumado', ideal:'churrasco, costela, brisket, charutos',
+    volumes:[{l:'50 ml',pf:20.00,pj:12.00},{l:'200 ml',pf:75.00,pj:35.00},{l:'750 ml',pf:250.00,pj:150.00},{l:'2 L (PET)',pf:300.00,pj:300.00,pet:true}] },
+  { id:'org_prata', nome:'Remedin Orgânica Prata', serie:'Prata Orgânica · Cana Caiana · inox · 38%',
+    desc:'Produção orgânica do Sítio do Vovô Mandelli. Limpa e equilibrada.',
+    aroma:'cana fresca, notas vegetais delicadas, leve dulçor', sabor:'leve, limpo, seco, final suave', ideal:'drinks premium, caipirinhas especiais, consumo leve',
+    volumes:[{l:'500 ml',pf:100.00,pj:55.00}] },
+  { id:'org_jatoba', nome:'Remedin Orgânica Jatobá', serie:'Orgânica · madeira Jatobá · 38%',
+    desc:'A força do Cerrado numa cachaça orgânica.',
+    aroma:'madeira nativa, especiarias, notas terrosas, castanhas', sabor:'encorpado, complexo, persistente, final seco', ideal:'presentes premium, degustação, carnes e queijos maturados',
+    volumes:[{l:'500 ml',pf:100.00,pj:55.00}] },
+  { id:'onca', nome:'Remedin Da Onça', serie:'Prata · inox · 38%',
+    desc:'Cachaça raiz, popular e descomplicada. Homenagem à onça-pintada preta e seu filhote (alambique, 2025).',
+    aroma:'cana-de-açúcar, notas vegetais, frescor rústico', sabor:'seco, intenso, tradicional, final direto', ideal:'boteco, churrasco, feijoada, roda de amigos',
+    volumes:[{l:'600 ml',pf:35.00,pj:30.00}] },
 ];
 
-// Pontos de venda (espelham a planilha "Remedin — Lojas e Pontos de Venda")
+/* Pontos de venda — espelham a planilha "Remedin — Lojas e Pontos de Venda" */
 const STORES = [
   { nome:'Alambique Amana (fábrica)', regiao:'Fercal / Sobradinho', horario:'Seg–Sáb 9h–17h', retirada:true,  emoji:'🏭' },
   { nome:'Empório do Cerrado',        regiao:'Asa Norte',           horario:'Seg–Sáb 10h–20h', retirada:true,  emoji:'🏬' },
@@ -183,215 +186,232 @@ const STORES = [
   { nome:'Quitanda Raízes Orgânicas', regiao:'Sudoeste',            horario:'Seg–Sex 9h–19h',  retirada:false, emoji:'🥬' },
 ];
 
-const isPet = v => /PET/i.test(v.l) || /\b2\s*L/i.test(v.l);
-
 let cart = [];
-let pending = {};   // produto + volume sendo escolhidos
-let order = {};     // tipo(PF/PJ), entrega, nome, cep, endereço, loja, ref...
+let pending = {};
+let order = {};     // tipo(PF/PJ), upsellOffered, entrega, nome, cep, endereço, loja, ref...
 const chat = document.getElementById('chat');
 const dock = document.getElementById('dock');
 
 /* ---------- ENGINE ---------- */
 function addUser(text){
-  const b = document.createElement('div');
-  b.className = 'bubble out';
-  b.innerHTML = esc(text) + '<span class="time">'+now()+'</span>';
+  const b=document.createElement('div'); b.className='bubble out';
+  b.innerHTML=esc(text)+'<span class="time">'+now()+'</span>';
   chat.appendChild(b); scrollDown();
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
 function botSay(html, cb, delay){
-  const t = document.createElement('div');
-  t.className = 'typing'; t.innerHTML='<span></span><span></span><span></span>';
+  const t=document.createElement('div'); t.className='typing'; t.innerHTML='<span></span><span></span><span></span>';
   chat.appendChild(t); scrollDown();
   setTimeout(()=>{
     t.remove();
-    const b = document.createElement('div');
-    b.className = 'bubble in';
-    b.innerHTML = html + '<span class="time">'+now()+'</span>';
+    const b=document.createElement('div'); b.className='bubble in';
+    b.innerHTML=html+'<span class="time">'+now()+'</span>';
     chat.appendChild(b); scrollDown();
     if(cb) cb();
-  }, delay || (500 + Math.min(html.length*8, 700)));
+  }, delay || (500 + Math.min(html.length*7, 800)));
 }
 function botSeq(list, done){
   if(!list.length){ if(done) done(); return; }
-  const [first, ...rest] = list;
-  botSay(first, ()=> botSeq(rest, done));
+  const [first, ...rest]=list;
+  botSay(first, ()=>botSeq(rest, done));
 }
-function scrollDown(){ chat.scrollTop = chat.scrollHeight; }
+function scrollDown(){ chat.scrollTop=chat.scrollHeight; }
 function clearDock(){ dock.innerHTML=''; }
-
 function buttons(items){
   clearDock();
   items.forEach(it=>{
-    const btn = document.createElement('button');
-    btn.className = 'qbtn' + (it.back?' back':'') + (it.locked?' locked':'');
-    let inner = '';
-    if(it.num) inner += '<span class="num">'+it.num+'</span>';
-    inner += '<span>'+it.label+'</span>';
-    if(it.price) inner += '<span class="price">'+it.price+'</span>';
-    if(it.lock)  inner += '<span class="lock">'+it.lock+'</span>';
-    btn.innerHTML = inner;
-    btn.onclick = ()=>{ addUser(it.echo || it.label); it.go(); };
+    const btn=document.createElement('button');
+    btn.className='qbtn'+(it.back?' back':'');
+    let inner='';
+    if(it.num) inner+='<span class="num">'+it.num+'</span>';
+    inner+='<span>'+it.label+'</span>';
+    if(it.price) inner+='<span class="price">'+it.price+'</span>';
+    btn.innerHTML=inner;
+    btn.onclick=()=>{ addUser(it.echo||it.label); it.go(); };
     dock.appendChild(btn);
   });
 }
-
 function textInput(placeholder, onSend){
   clearDock();
-  const row = document.createElement('div'); row.className='textrow';
-  const inp = document.createElement('input');
-  inp.placeholder = placeholder; inp.autocomplete='off';
-  const send = document.createElement('button'); send.className='sendbtn';
+  const row=document.createElement('div'); row.className='textrow';
+  const inp=document.createElement('input'); inp.placeholder=placeholder; inp.autocomplete='off';
+  const send=document.createElement('button'); send.className='sendbtn';
   send.innerHTML='<svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>';
-  const fire = ()=>{ const v=inp.value.trim(); if(!v) return; addUser(v); onSend(v); };
-  send.onclick = fire;
+  const fire=()=>{ const v=inp.value.trim(); if(!v) return; addUser(v); onSend(v); };
+  send.onclick=fire;
   inp.addEventListener('keydown', e=>{ if(e.key==='Enter') fire(); });
   row.appendChild(inp); row.appendChild(send);
   dock.appendChild(row); inp.focus();
 }
-
+function askQty(onValid){
+  textInput('Ex: 2', raw=>{
+    const digits=(raw||'').replace(/\D/g,''); const n=parseInt(digits,10);
+    if(!digits || !n || n<1){ botSay('Manda só o <b>número</b> de unidades, por favor (ex: 2). 🙂', ()=>askQty(onValid)); return; }
+    onValid(n);
+  });
+}
 function cartTotal(){ return cart.reduce((s,i)=>s+i.preco*i.qtd,0); }
 function cartCount(){ return cart.reduce((s,i)=>s+i.qtd,0); }
+const price = v => order.tipo==='PJ' ? v.pj : v.pf;
 
-/* ---------- TELAS ---------- */
-
+/* ---------- SAUDAÇÃO / PRIMEIRA VEZ (fluxo v6) ---------- */
 function greeting(){
-  cart=[]; pending={}; order={};
-  chat.innerHTML='';
+  cart=[]; pending={}; order={}; chat.innerHTML='';
   botSeq([
-    'Opa, chegou chegou! 🍃 Puxa o banquinho aí no balcão.',
-    'Aqui quem fala é a <b>Cachaça Remedin</b> — o santo remédio que cura tristeza e anima a prosa.\n\nNo que é que eu te sirvo hoje?'
-  ], mainMenu);
+    'Eita, chegou visita! 🍺',
+    'Eu sou o <b>Zé Remedin</b> — seu atendente do boteco mais artesanal de Brasília!\n\nVocê já nos conhece ou é a primeira vez aqui?'
+  ], primeiraVez);
 }
-
-function mainMenu(){
+function primeiraVez(){
   buttons([
-    {num:'1', label:'Ver o catálogo / fazer pedido', go:catalog},
-    {num:'2', label:'Conhecer a Remedin', go:about},
-    {num:'3', label:'Onde encontrar', go:where},
-    {num:'4', label:'Falar com a gente', go:human},
+    {num:'1', label:'👋 Primeira vez!', echo:'Primeira vez!', go:welcomeNew},
+    {num:'2', label:'🥃 Já conheço!',   echo:'Já conheço!',  go:welcomeReturn},
   ]);
 }
-
-function catalog(){
-  botSay('Boa pedida! Olha só o que tá na prateleira hoje 👇\nÉ só tocar na que te interessou:', ()=>{
-    const items = PRODUCTS.map((p,i)=>({
-      num:(i+1), label:p.nome.replace('Remedin ',''),
-      echo:p.nome, go:()=>productDetail(p)
-    }));
-    if(cart.length) items.push({label:'🛒 Ver / editar sacola ('+cartCount()+')', echo:'Ver sacola', go:viewCart});
-    items.push({back:true, label:'↩ Voltar ao menu', echo:'Voltar', go:backToMenu});
-    buttons(items);
+function welcomeNew(){
+  botSeq([
+    'Seja muito bem-vindo ao boteco da Remedin! 🎉',
+    'Aqui a gente produz cachaças artesanais do Cerrado com alma, tradição e muito carinho.\n\nAntes de você escolher, deixa eu te apresentar nossa família de cachaças! 🥃'
+  ], familia);
+}
+function welcomeReturn(){
+  botSeq([
+    'Que saudade! Fico feliz em ter você de volta no boteco! 🎊',
+    'O copo já tá esperando por você! 🥃'
+  ], conheceProdutos);
+}
+function conheceProdutos(){
+  botSay('E aí, já manja das nossas cachaças ou quer que eu te apresente de novo?', ()=>{
+    buttons([
+      {num:'1', label:'🥃 Já conheço, bora pro cardápio!', echo:'Bora pro cardápio', go:catalog},
+      {num:'2', label:'🎓 Me apresenta as cachaças',        echo:'Me apresenta',       go:familia},
+      {num:'3', label:'👤 Falar com atendente',             echo:'Atendente',          go:human},
+    ]);
+  });
+}
+function familia(){
+  botSay('Deixa eu te apresentar nossa família! 🥃\n━━━━━━━━━━━━━━━\n🥈 <b>Prata</b> — base perfeita pra drinks e caipirinhas. Limpa, neutra e versátil.\n🥇 <b>Ouro</b> — 2 anos em carvalho europeu. Mel e baunilha, mais sofisticada.\n🌿 <b>Premium</b> (2 rótulos) — Jequitibá Rosa e Amburana, madeiras nativas pra apreciadores.\n👑 <b>Extra Premium</b> (3 rótulos) — Jatobá do Cerrado, Extra Premium e Defumada, o topo da casa.\n🌱 <b>Orgânica</b> (2 rótulos) — Orgânica Prata e Orgânica Jatobá, do Sítio do Vovô Mandelli.\n🐆 <b>Da Onça</b> — cachaça raiz, popular e descomplicada, pra boteco e churrasco.', ()=>{
+    buttons([
+      {num:'1', label:'🛒 Ver o cardápio / fazer pedido', echo:'Ver cardápio', go:catalog},
+      {back:true, label:'↩ Ir pro menu', echo:'Menu', go:mainMenu},
+    ]);
   });
 }
 
+/* ---------- MENU ---------- */
+function mainMenu(){
+  botSay('O que você vai querer hoje? 😄', ()=>{
+    buttons([
+      {num:'1', label:'🛒 Ver o cardápio / fazer pedido', echo:'Ver cardápio', go:catalog},
+      {num:'2', label:'📍 Onde comprar',                  echo:'Onde comprar', go:where},
+      {num:'3', label:'👤 Falar com a gente',             echo:'Falar com a gente', go:faq},
+      {num:'4', label:'ℹ️ Sobre a Remedin',               echo:'Sobre a Remedin', go:about},
+    ]);
+  });
+}
+
+/* ---------- PF/PJ + CATÁLOGO ---------- */
+function chooseClientType(){
+  botSay('Rapidinho antes do catálogo: você compra como <b>pessoa física</b> ou <b>lojista / revenda (PJ)</b>?\n<i style="color:#8696a0">PJ tem preço de atacado e acesso ao 2 L (PET).</i>', ()=>{
+    buttons([
+      {num:'1', label:'🧍 Pessoa física', echo:'Pessoa física', go:()=>{ order.tipo='PF'; catalog(); }},
+      {num:'2', label:'🏢 Lojista / revenda (PJ)', echo:'Sou PJ', go:()=>{ order.tipo='PJ'; catalog(); }},
+      {back:true, label:'↩ Voltar ao menu', echo:'Menu', go:mainMenu},
+    ]);
+  });
+}
+function catalog(){
+  if(!order.tipo){ return chooseClientType(); }
+  botSay('Boa pedida! Olha o que tá na prateleira'+(order.tipo==='PJ'?' <i style="color:#8696a0">(preços de atacado PJ)</i>':'')+' 👇\nÉ só tocar na que te interessou:', ()=>{
+    const items = PRODUCTS.map((p,i)=>({ num:(i+1), label:p.nome.replace('Remedin ',''), echo:p.nome, go:()=>productDetail(p) }));
+    if(cart.length) items.push({ label:'🛒 Ver / editar sacola ('+cartCount()+')', echo:'Ver sacola', go:viewCart });
+    items.push({ back:true, label:'↩ Voltar ao menu', echo:'Menu', go:mainMenu });
+    buttons(items);
+  });
+}
 function productDetail(p){
   pending = { produto:p };
   const html =
     '<div class="prod-img">🥃 '+p.nome.toUpperCase()+'</div>' +
-    '<b>'+p.nome+'</b>\n<i style="color:#8696a0">'+p.serie+'</i>\n\n' +
-    p.desc + '\n\n' +
-    '👃 <b>Aroma:</b> '+p.aroma+'\n' +
-    '👅 <b>Sabor:</b> '+p.sabor+'\n' +
-    '🍽 <b>Combina com:</b> '+p.ideal+'\n\n' +
-    'Qual tamanho você quer?';
+    '<b>'+p.nome+'</b>\n<i style="color:#8696a0">'+p.serie+'</i>\n\n' + p.desc + '\n\n' +
+    '👃 <b>Aroma:</b> '+p.aroma+'\n👅 <b>Sabor:</b> '+p.sabor+'\n🍽 <b>Combina com:</b> '+p.ideal+'\n\nQual tamanho você quer?';
   botSay(html, ()=>{
-    const items = p.volumes.map(v=>{
-      const it = { label:v.l, price:BRL(v.p), echo:v.l+' — '+BRL(v.p) };
-      if(isPet(v) && order.tipo!=='PJ'){        // 2L (PET) = exclusivo PJ
-        it.lock = '🔒 PJ';
-        it.go = ()=>petGate(p, v);
-      } else {
-        it.go = ()=>chooseQty(p, v);
-      }
-      return it;
-    });
-    items.push({back:true, label:'↩ Ver outras cachaças', echo:'Ver outras', go:catalog});
+    const items = p.volumes
+      .filter(v=> !(v.pet && order.tipo!=='PJ'))   // 2 L (PET) só aparece pra PJ
+      .map(v=>({ label:v.l+(v.pet?' · atacado':''), price:BRL(price(v)), echo:v.l+' — '+BRL(price(v)), go:()=>chooseQty(p, v) }));
+    items.push({ back:true, label:'↩ Ver outras cachaças', echo:'Ver outras', go:catalog });
     buttons(items);
   });
 }
-
-function petGate(p, v){
-  botSay('Esse tamanho <b>2 L (PET)</b> é exclusivo pra <b>lojistas / revenda (PJ)</b>. 🏢\n\nVocê tá comprando como PJ?', ()=>{
-    buttons([
-      {num:'1', label:'Sim, sou lojista (PJ)', echo:'Sou PJ', go:()=>{ order.tipo='PJ'; chooseQty(p, v); }},
-      {num:'2', label:'Não, sou pessoa física', echo:'Sou PF', go:()=>{
-        botSay('Sem problema! O 2 L (PET) é só pra revenda, mas os outros tamanhos tão liberados. 😉', ()=>productDetail(p));
-      }},
-    ]);
-  });
-}
-
 function chooseQty(p, v){
   pending = { produto:p, volume:v };
-  botSay('Show! Quantas unidades da <b>'+p.nome+' '+v.l+'</b>?', ()=>{
-    const items = [1,2,3,4,5,6].map(n=>({label:String(n), echo:n+' un.', go:()=>addToCart(n)}));
-    items.push({back:true, label:'↩ Voltar', echo:'Voltar', go:()=>productDetail(p)});
-    buttons(items);
-  });
+  botSay('Show! <b>Quantas unidades</b> da '+p.nome+' '+v.l+'? É só digitar o número.', ()=>askQty(n=>addToCart(n)));
 }
-
 function addToCart(qtd){
   const {produto, volume} = pending;
-  cart.push({ nome:produto.nome, volume:volume.l, preco:volume.p, qtd });
+  cart.push({ nome:produto.nome, volume:volume.l, preco:price(volume), qtd });
   pending={};
-  botSay('Anotado! ✅ <b>'+qtd+'x '+produto.nome+' '+volume.l+'</b>\n\nE aí, mais alguma coisa na sacola?', afterAdd);
+  botSay('Anotado! ✅ <b>'+qtd+'x '+produto.nome+' '+volume.l+'</b>\n\nMais alguma coisa na sacola?', afterAdd);
 }
-
 function afterAdd(){
   buttons([
     {num:'1', label:'Ver mais cachaças', go:catalog},
     {num:'2', label:'🛒 Ver / editar sacola ('+cartCount()+')', echo:'Ver sacola', go:viewCart},
-    {num:'3', label:'✅ Pode fechar o pedido', echo:'Fechar pedido', go:startCheckout},
+    {num:'3', label:'✅ Pode fechar o pedido', echo:'Fechar pedido', go:fecharPedido},
   ]);
 }
 
-/* ----- Carrinho + edição ----- */
+/* ---------- CARRINHO + EDIÇÃO ---------- */
 function viewCart(){
   if(!cart.length){ botSay('Sua sacola tá vazia! Bora escolher uma cachaça? 🥃', catalog); return; }
   const lista = cart.map((i,idx)=> (idx+1)+'. '+i.qtd+'x '+i.nome.replace('Remedin ','')+' '+i.volume+' — '+BRL(i.preco*i.qtd)).join('\n');
   botSay('🛒 <b>Sua sacola</b>\n'+lista+'\n\n<b>Total: '+BRL(cartTotal())+'</b>\n\nQuer ajustar algum item? É só tocar nele.', ()=>{
-    const items = cart.map((i,idx)=>({
-      num:String(idx+1), label:i.nome.replace('Remedin ','')+' '+i.volume+' (x'+i.qtd+')',
-      echo:'Editar item '+(idx+1), go:()=>editItem(idx)
-    }));
-    items.push({label:'➕ Adicionar mais', echo:'Adicionar mais', go:catalog});
-    items.push({label:'✅ Fechar pedido', echo:'Fechar pedido', go:startCheckout});
-    items.push({back:true, label:'↩ Voltar ao menu', echo:'Voltar', go:backToMenu});
+    const items = cart.map((i,idx)=>({ num:String(idx+1), label:i.nome.replace('Remedin ','')+' '+i.volume+' (x'+i.qtd+')', echo:'Editar item '+(idx+1), go:()=>editItem(idx) }));
+    items.push({ label:'➕ Adicionar mais', echo:'Adicionar mais', go:catalog });
+    items.push({ label:'✅ Fechar pedido', echo:'Fechar pedido', go:fecharPedido });
+    items.push({ back:true, label:'↩ Voltar ao menu', echo:'Menu', go:mainMenu });
     buttons(items);
   });
 }
-
 function editItem(idx){
-  const i = cart[idx];
+  const i=cart[idx];
   botSay('O que fazer com <b>'+i.nome+' '+i.volume+'</b> (x'+i.qtd+')?', ()=>{
     buttons([
       {num:'1', label:'🔢 Alterar quantidade', echo:'Alterar quantidade', go:()=>changeQty(idx)},
-      {num:'2', label:'🗑 Remover item', echo:'Remover item', go:()=>{
-        const rem = cart[idx]; cart.splice(idx,1);
-        botSay('Removido! ✅ <b>'+rem.nome+' '+rem.volume+'</b> saiu da sacola.', viewCart);
-      }},
+      {num:'2', label:'🗑 Remover item', echo:'Remover item', go:()=>{ const r=cart[idx]; cart.splice(idx,1); botSay('Removido! ✅ <b>'+r.nome+' '+r.volume+'</b> saiu da sacola.', viewCart); }},
       {back:true, label:'↩ Voltar à sacola', echo:'Voltar', go:viewCart},
     ]);
   });
 }
-
 function changeQty(idx){
-  const i = cart[idx];
-  botSay('Nova quantidade pra <b>'+i.nome+' '+i.volume+'</b>?', ()=>{
-    const items = [1,2,3,4,5,6].map(n=>({label:String(n), echo:n+' un.', go:()=>{
-      cart[idx].qtd = n;
-      botSay('Quantidade atualizada! ✅', viewCart);
-    }}));
-    items.push({back:true, label:'↩ Voltar', echo:'Voltar', go:()=>editItem(idx)});
-    buttons(items);
+  const i=cart[idx];
+  botSay('Qual a <b>nova quantidade</b> de '+i.nome+' '+i.volume+'? Digita o número.', ()=>{
+    askQty(n=>{ cart[idx].qtd=n; botSay('Quantidade atualizada! ✅', viewCart); });
   });
 }
 
-/* ----- Checkout: entrega / retirada ----- */
-function startCheckout(){
+/* ---------- UPSELL DO ZÉ (Defumada 50 ml) ---------- */
+function fecharPedido(){
   if(!cart.length){ botSay('Ainda não tem nada na sacola! Bora escolher? 🥃', catalog); return; }
+  if(!order.upsellOffered){ return offerUpsell(); }
+  checkoutEntrega();
+}
+function offerUpsell(){
+  order.upsellOffered = true;
+  const preco = order.tipo==='PJ' ? 12 : 20;
+  botSay('Antes de fechar… uma dica do Zé! 😏\n🔥 Você sabia que a Remedin tem a <b>PRIMEIRA cachaça defumada artesanal do Brasil</b>?\n\nQue tal incluir essa belezinha no pedido? 👉 <b>Defumada 50 ml — '+BRL(preco)+'</b>\nÉ o preço de um drink — e a experiência não tem preço! 🥃', ()=>{
+    buttons([
+      {num:'1', label:'🔥 Quero! Adiciona aí', echo:'Quero a Defumada!', go:()=>{
+        cart.push({ nome:'Remedin Defumada', volume:'50 ml', preco:preco, qtd:1 });
+        botSay('Boa escolha! 🔥 Joguei uma <b>Defumada 50 ml</b> na sacola.', checkoutEntrega);
+      }},
+      {num:'2', label:'✅ Não, pode fechar!', echo:'Pode fechar', go:checkoutEntrega},
+    ]);
+  });
+}
+
+/* ---------- CHECKOUT: entrega / retirada + ViaCEP ---------- */
+function checkoutEntrega(){
   botSay('Fechado! 🧾 Como você prefere receber?', ()=>{
     buttons([
       {num:'1', label:'🛵 Entrega no meu endereço', echo:'Entrega', go:()=>{ order.entrega='Entrega'; askName(); }},
@@ -400,23 +420,20 @@ function startCheckout(){
     ]);
   });
 }
-
 function askName(){
   botSay('Show! Pra começar, qual seu <b>nome</b>? 😊', ()=>{
     textInput('Seu nome...', v=>{ order.nome=v; order.entrega==='Retirada' ? pickStore() : askCep(); });
   });
 }
-
-/* Entrega: CEP + ViaCEP */
 function askCep(){
   botSay('Valeu, '+esc(order.nome.split(' ')[0])+'! Qual o seu <b>CEP</b>? (só os números) 📮', ()=>{
     textInput('Ex: 73270000', v=>lookupCep(v));
   });
 }
 function lookupCep(raw){
-  const cep = (raw||'').replace(/\D/g,'');
+  const cep=(raw||'').replace(/\D/g,'');
   if(cep.length!==8){ botSay('❌ O CEP precisa ter 8 números. Pode digitar de novo?', askCep); return; }
-  order.cep = cep;
+  order.cep=cep;
   botSay('Só um segundo, tô buscando seu endereço… 🔎', ()=>{
     fetch('https://viacep.com.br/ws/'+cep+'/json/')
       .then(r=>r.json())
@@ -434,7 +451,7 @@ function lookupCep(raw){
   }, 700);
 }
 function confirmAddr(){
-  const l1 = order.logradouro ? esc(order.logradouro) : '(sem logradouro no CEP — a gente confirma no número)';
+  const l1 = order.logradouro ? esc(order.logradouro) : '(sem logradouro no CEP — confirmamos no número)';
   botSay('Achei aqui! 📍\n<b>'+l1+'</b>\n'+esc(order.bairro)+' — '+esc(order.cidade)+'-'+esc(order.uf)+'\n\nConfere?', ()=>{
     buttons([
       {num:'1', label:'✅ Confere', echo:'Confere', go:askNumero},
@@ -453,24 +470,17 @@ function askCompl(){
   });
 }
 function askRef(){
-  botSay('E um <b>ponto de referência</b> pra facilitar pro entregador? (se não tiver, escreve "não")', ()=>{
+  botSay('E um <b>ponto de referência</b> pra facilitar? (se não tiver, escreve "não")', ()=>{
     textInput('Ponto de referência...', v=>{ order.ref=v; summary(); });
   });
 }
-
-/* Retirada: escolher ponto */
 function pickStore(){
   botSay('Beleza, '+esc(order.nome.split(' ')[0])+'! Em qual ponto você quer <b>retirar</b>? 🏬', ()=>{
-    const items = STORES.filter(s=>s.retirada).map(s=>({
-      label:s.emoji+' '+s.nome+' · '+s.regiao, echo:s.nome,
-      go:()=>{ order.loja=s; summary(); }
-    }));
-    items.push({back:true, label:'↩ Voltar', echo:'Voltar', go:startCheckout});
+    const items=STORES.filter(s=>s.retirada).map(s=>({ label:s.emoji+' '+s.nome+' · '+s.regiao, echo:s.nome, go:()=>{ order.loja=s; summary(); }}));
+    items.push({ back:true, label:'↩ Voltar', echo:'Voltar', go:checkoutEntrega });
     buttons(items);
   });
 }
-
-/* Resumo + fechamento */
 function summary(){
   const lista = cart.map(i=>'• '+i.qtd+'x '+i.nome+' '+i.volume+' — '+BRL(i.preco*i.qtd)).join('\n');
   let bloco;
@@ -488,19 +498,17 @@ function summary(){
   }
   const html =
     'Deixa eu repetir tudo pra não pisar na bola:\n\n' +
-    '🛒 <b>Pedido</b>\n'+lista+'\n\n' +
+    '🛒 <b>Pedido</b> ('+order.tipo+')\n'+lista+'\n\n' +
     '<b>Total: '+BRL(cartTotal())+'</b>\n\n' +
-    '👤 '+esc(order.nome)+'\n' + bloco + '\n\n' +
-    'Tá tudo certo?';
+    '👤 '+esc(order.nome)+'\n' + bloco + '\n\nTá tudo certo?';
   botSay(html, ()=>{
     buttons([
       {num:'1', label:'✅ Confirmar pedido', echo:'Confirmar', go:closing},
-      {num:'2', label:'🔄 Corrigir', echo:'Corrigir', go:startCheckout},
+      {num:'2', label:'🔄 Corrigir', echo:'Corrigir', go:checkoutEntrega},
       {num:'3', label:'Recomeçar', echo:'Recomeçar', go:resetFlow},
     ]);
   });
 }
-
 function closing(){
   botSeq([
     'Pedido anotado, parceiro(a)! 🤝',
@@ -510,38 +518,50 @@ function closing(){
   });
 }
 
-/* ---------- Institucional ---------- */
-function about(){
-  botSeq([
-    'A Remedin nasceu das mãos de um casal de mineiros que mora há vinte anos em Brasília. 🪕',
-    'Tudo no capricho da tradição: <b>alambique de cobre, lenha, fermentação natural</b> e descanso em tonéis de madeira.',
-    'E mais: somos a <b>primeira cachaça com rótulo 100% customizável do Brasil</b> — manda sua ideia e recebe sua Remedin personalizada em casa.'
-  ], ()=>{
+/* ---------- AUTOATENDIMENTO (FAQ) ---------- */
+function faq(){
+  botSay('Espera, deixa eu tentar te ajudar antes de chamar alguém! 😊\nQual é a sua dúvida?', ()=>{
     buttons([
-      {num:'1', label:'Ver o catálogo', go:catalog},
-      {back:true, label:'↩ Voltar ao menu', echo:'Voltar', go:backToMenu},
+      {num:'1', label:'📦 Meu pedido', echo:'Meu pedido', go:()=>faqAns('📦 <b>Sobre o seu pedido:</b>\nApós a confirmação você recebe o número do pedido aqui no chat.\nPra rastreio: 📧 comercial@remedincachaca.com · 📱 @remedincachaca')},
+      {num:'2', label:'💳 Formas de pagamento', echo:'Formas de pagamento', go:()=>faqAns('💳 <b>Formas de pagamento:</b>\n✅ Pix (na hora)  ✅ Crédito  ✅ Débito\nO link de pagamento vem aqui no chat após a confirmação.')},
+      {num:'3', label:'🚚 Prazo de entrega', echo:'Prazo de entrega', go:()=>faqAns('🚚 <b>Prazo estimado:</b>\n• Brasília/DF: 1–2 dias úteis\n• Capitais: 3–7 dias úteis\n• Interior: 5–10 dias úteis\nO frete é calculado pelo seu CEP na hora do pedido.')},
+      {num:'4', label:'🥃 Dúvida sobre produto', echo:'Dúvida sobre produto', go:familia},
+      {num:'5', label:'💬 Outro assunto', echo:'Outro assunto', go:human},
+      {back:true, label:'↩ Voltar ao menu', echo:'Menu', go:mainMenu},
+    ]);
+  });
+}
+function faqAns(html){
+  botSay(html+'\n\nIsso resolveu? 😊', ()=>{
+    buttons([
+      {num:'1', label:'✅ Resolveu, valeu!', echo:'Resolveu!', go:mainMenu},
+      {num:'2', label:'❌ Ainda não', echo:'Ainda não', go:human},
     ]);
   });
 }
 
+/* ---------- INSTITUCIONAL ---------- */
+function about(){
+  botSay('🏺 <b>Cachaça Remedin</b>\n━━━━━━━━━━━━━━━\nNascemos no coração do Cerrado, em Brasília-DF — mas a Remedin não fica presa em nenhum boteco só. 🌎\nNossas cachaças artesanais são produzidas com madeiras nativas do Cerrado e chegam a todo o Brasil.\n\nO Cerrado inspirou cada gota. O Brasil inteiro merece provar. 🥃', ()=>{
+    buttons([
+      {num:'1', label:'Ver o cardápio', go:catalog},
+      {back:true, label:'↩ Voltar ao menu', echo:'Menu', go:mainMenu},
+    ]);
+  });
+}
 function where(){
-  const lista = STORES.map(s=> s.emoji+' <b>'+s.nome+'</b>\n'+s.regiao+' · '+s.horario ).join('\n\n');
+  const lista = STORES.map(s=> s.emoji+' <b>'+s.nome+'</b>\n'+s.regiao+' · '+s.horario).join('\n\n');
   botSay('📍 <b>Onde encontrar a Remedin</b> (Brasília-DF)\n\n'+lista+'\n\nE claro: a gente também <b>entrega</b> na sua casa. 🚚', ()=>{
     buttons([
-      {num:'1', label:'Ver o catálogo', go:catalog},
-      {back:true, label:'↩ Voltar ao menu', echo:'Voltar', go:backToMenu},
+      {num:'1', label:'Ver o cardápio', go:catalog},
+      {back:true, label:'↩ Voltar ao menu', echo:'Menu', go:mainMenu},
     ]);
   });
 }
-
 function human(){
-  botSay('Beleza! Vou chamar alguém da nossa equipe pra te atender aqui mesmo. Segura um instantinho que já já alguém aparece. 👋', ()=>{
-    buttons([{back:true, label:'↩ Voltar ao menu', echo:'Voltar', go:backToMenu}]);
+  botSay('Claro! Vou chamar alguém pra te atender agora. 👤\nUm momento que já te conectamos com a equipe! ⏱️\n\n🕐 <b>Atendimento:</b> Seg–Sex 9h–18h · Sáb 9h–13h\nFora desse horário, deixa sua mensagem que a gente responde! 😊', ()=>{
+    buttons([{back:true, label:'↩ Voltar ao menu', echo:'Menu', go:mainMenu}]);
   });
-}
-
-function backToMenu(){
-  botSay('Tô aqui no balcão! No que mais posso te servir?', mainMenu);
 }
 function resetFlow(){ greeting(); }
 
