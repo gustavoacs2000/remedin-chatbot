@@ -97,6 +97,9 @@
   .qbtn .num{color:var(--gold-soft);font-weight:700;font-size:13px;min-width:14px}
   .qbtn.back{border-left-color:var(--wa-sub);color:var(--wa-sub);font-size:13px}
   .qbtn .price{margin-left:auto;color:var(--gold-soft);font-weight:600;font-size:13px}
+  .qbtn .lock{margin-left:auto;color:var(--gold-soft);font-weight:600;font-size:11.5px;opacity:.85;letter-spacing:.3px}
+  .qbtn.locked{border-left-color:#6b5a2e}
+  .qbtn.locked:hover{background:#33414a}
   .textrow{display:flex;gap:8px;align-items:center}
   .textrow input{
     flex:1;background:#2a3942;border:none;border-radius:22px;padding:11px 16px;
@@ -171,19 +174,31 @@ const PRODUCTS = [
     volumes:[{l:'50 ml',p:20.00},{l:'200 ml',p:75.00},{l:'750 ml',p:250.00},{l:'2 L (PET)',p:300.00}] },
 ];
 
+// Pontos de venda (espelham a planilha "Remedin — Lojas e Pontos de Venda")
+const STORES = [
+  { nome:'Alambique Amana (fábrica)', regiao:'Fercal / Sobradinho', horario:'Seg–Sáb 9h–17h', retirada:true,  emoji:'🏭' },
+  { nome:'Empório do Cerrado',        regiao:'Asa Norte',           horario:'Seg–Sáb 10h–20h', retirada:true,  emoji:'🏬' },
+  { nome:'Adega Boteco da 13',        regiao:'Águas Claras',        horario:'Ter–Dom 16h–23h', retirada:false, emoji:'🍸' },
+  { nome:'Mercado Pau-Brasil',        regiao:'Taguatinga Centro',   horario:'Seg–Sáb 8h–18h',  retirada:true,  emoji:'🛒' },
+  { nome:'Quitanda Raízes Orgânicas', regiao:'Sudoeste',            horario:'Seg–Sex 9h–19h',  retirada:false, emoji:'🥬' },
+];
+
+const isPet = v => /PET/i.test(v.l) || /\b2\s*L/i.test(v.l);
+
 let cart = [];
 let pending = {};   // produto + volume sendo escolhidos
-let order = {};     // nome, endereco, referencia
+let order = {};     // tipo(PF/PJ), entrega, nome, cep, endereço, loja, ref...
 const chat = document.getElementById('chat');
 const dock = document.getElementById('dock');
 
+/* ---------- ENGINE ---------- */
 function addUser(text){
   const b = document.createElement('div');
   b.className = 'bubble out';
   b.innerHTML = esc(text) + '<span class="time">'+now()+'</span>';
   chat.appendChild(b); scrollDown();
 }
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function botSay(html, cb, delay){
   const t = document.createElement('div');
@@ -198,7 +213,6 @@ function botSay(html, cb, delay){
     if(cb) cb();
   }, delay || (500 + Math.min(html.length*8, 700)));
 }
-// fila de mensagens do bot em sequência
 function botSeq(list, done){
   if(!list.length){ if(done) done(); return; }
   const [first, ...rest] = list;
@@ -211,11 +225,12 @@ function buttons(items){
   clearDock();
   items.forEach(it=>{
     const btn = document.createElement('button');
-    btn.className = 'qbtn' + (it.back?' back':'');
+    btn.className = 'qbtn' + (it.back?' back':'') + (it.locked?' locked':'');
     let inner = '';
     if(it.num) inner += '<span class="num">'+it.num+'</span>';
     inner += '<span>'+it.label+'</span>';
     if(it.price) inner += '<span class="price">'+it.price+'</span>';
+    if(it.lock)  inner += '<span class="lock">'+it.lock+'</span>';
     btn.innerHTML = inner;
     btn.onclick = ()=>{ addUser(it.echo || it.label); it.go(); };
     dock.appendChild(btn);
@@ -235,6 +250,9 @@ function textInput(placeholder, onSend){
   row.appendChild(inp); row.appendChild(send);
   dock.appendChild(row); inp.focus();
 }
+
+function cartTotal(){ return cart.reduce((s,i)=>s+i.preco*i.qtd,0); }
+function cartCount(){ return cart.reduce((s,i)=>s+i.qtd,0); }
 
 /* ---------- TELAS ---------- */
 
@@ -262,6 +280,7 @@ function catalog(){
       num:(i+1), label:p.nome.replace('Remedin ',''),
       echo:p.nome, go:()=>productDetail(p)
     }));
+    if(cart.length) items.push({label:'🛒 Ver / editar sacola ('+cartCount()+')', echo:'Ver sacola', go:viewCart});
     items.push({back:true, label:'↩ Voltar ao menu', echo:'Voltar', go:backToMenu});
     buttons(items);
   });
@@ -278,12 +297,29 @@ function productDetail(p){
     '🍽 <b>Combina com:</b> '+p.ideal+'\n\n' +
     'Qual tamanho você quer?';
   botSay(html, ()=>{
-    const items = p.volumes.map(v=>({
-      label:v.l, price:BRL(v.p), echo:v.l+' — '+BRL(v.p),
-      go:()=>chooseQty(p, v)
-    }));
+    const items = p.volumes.map(v=>{
+      const it = { label:v.l, price:BRL(v.p), echo:v.l+' — '+BRL(v.p) };
+      if(isPet(v) && order.tipo!=='PJ'){        // 2L (PET) = exclusivo PJ
+        it.lock = '🔒 PJ';
+        it.go = ()=>petGate(p, v);
+      } else {
+        it.go = ()=>chooseQty(p, v);
+      }
+      return it;
+    });
     items.push({back:true, label:'↩ Ver outras cachaças', echo:'Ver outras', go:catalog});
     buttons(items);
+  });
+}
+
+function petGate(p, v){
+  botSay('Esse tamanho <b>2 L (PET)</b> é exclusivo pra <b>lojistas / revenda (PJ)</b>. 🏢\n\nVocê tá comprando como PJ?', ()=>{
+    buttons([
+      {num:'1', label:'Sim, sou lojista (PJ)', echo:'Sou PJ', go:()=>{ order.tipo='PJ'; chooseQty(p, v); }},
+      {num:'2', label:'Não, sou pessoa física', echo:'Sou PF', go:()=>{
+        botSay('Sem problema! O 2 L (PET) é só pra revenda, mas os outros tamanhos tão liberados. 😉', ()=>productDetail(p));
+      }},
+    ]);
   });
 }
 
@@ -300,45 +336,167 @@ function addToCart(qtd){
   const {produto, volume} = pending;
   cart.push({ nome:produto.nome, volume:volume.l, preco:volume.p, qtd });
   pending={};
-  botSay('Anotado! ✅ <b>'+qtd+'x '+produto.nome+' '+volume.l+'</b>\n\nQuer colocar mais alguma coisa na sacola?', ()=>{
+  botSay('Anotado! ✅ <b>'+qtd+'x '+produto.nome+' '+volume.l+'</b>\n\nE aí, mais alguma coisa na sacola?', afterAdd);
+}
+
+function afterAdd(){
+  buttons([
+    {num:'1', label:'Ver mais cachaças', go:catalog},
+    {num:'2', label:'🛒 Ver / editar sacola ('+cartCount()+')', echo:'Ver sacola', go:viewCart},
+    {num:'3', label:'✅ Pode fechar o pedido', echo:'Fechar pedido', go:startCheckout},
+  ]);
+}
+
+/* ----- Carrinho + edição ----- */
+function viewCart(){
+  if(!cart.length){ botSay('Sua sacola tá vazia! Bora escolher uma cachaça? 🥃', catalog); return; }
+  const lista = cart.map((i,idx)=> (idx+1)+'. '+i.qtd+'x '+i.nome.replace('Remedin ','')+' '+i.volume+' — '+BRL(i.preco*i.qtd)).join('\n');
+  botSay('🛒 <b>Sua sacola</b>\n'+lista+'\n\n<b>Total: '+BRL(cartTotal())+'</b>\n\nQuer ajustar algum item? É só tocar nele.', ()=>{
+    const items = cart.map((i,idx)=>({
+      num:String(idx+1), label:i.nome.replace('Remedin ','')+' '+i.volume+' (x'+i.qtd+')',
+      echo:'Editar item '+(idx+1), go:()=>editItem(idx)
+    }));
+    items.push({label:'➕ Adicionar mais', echo:'Adicionar mais', go:catalog});
+    items.push({label:'✅ Fechar pedido', echo:'Fechar pedido', go:startCheckout});
+    items.push({back:true, label:'↩ Voltar ao menu', echo:'Voltar', go:backToMenu});
+    buttons(items);
+  });
+}
+
+function editItem(idx){
+  const i = cart[idx];
+  botSay('O que fazer com <b>'+i.nome+' '+i.volume+'</b> (x'+i.qtd+')?', ()=>{
     buttons([
-      {num:'1', label:'Ver mais cachaças', go:catalog},
-      {num:'2', label:'Pode fechar o pedido', go:askName},
+      {num:'1', label:'🔢 Alterar quantidade', echo:'Alterar quantidade', go:()=>changeQty(idx)},
+      {num:'2', label:'🗑 Remover item', echo:'Remover item', go:()=>{
+        const rem = cart[idx]; cart.splice(idx,1);
+        botSay('Removido! ✅ <b>'+rem.nome+' '+rem.volume+'</b> saiu da sacola.', viewCart);
+      }},
+      {back:true, label:'↩ Voltar à sacola', echo:'Voltar', go:viewCart},
+    ]);
+  });
+}
+
+function changeQty(idx){
+  const i = cart[idx];
+  botSay('Nova quantidade pra <b>'+i.nome+' '+i.volume+'</b>?', ()=>{
+    const items = [1,2,3,4,5,6].map(n=>({label:String(n), echo:n+' un.', go:()=>{
+      cart[idx].qtd = n;
+      botSay('Quantidade atualizada! ✅', viewCart);
+    }}));
+    items.push({back:true, label:'↩ Voltar', echo:'Voltar', go:()=>editItem(idx)});
+    buttons(items);
+  });
+}
+
+/* ----- Checkout: entrega / retirada ----- */
+function startCheckout(){
+  if(!cart.length){ botSay('Ainda não tem nada na sacola! Bora escolher? 🥃', catalog); return; }
+  botSay('Fechado! 🧾 Como você prefere receber?', ()=>{
+    buttons([
+      {num:'1', label:'🛵 Entrega no meu endereço', echo:'Entrega', go:()=>{ order.entrega='Entrega'; askName(); }},
+      {num:'2', label:'🏬 Retirar num ponto de venda', echo:'Retirada', go:()=>{ order.entrega='Retirada'; askName(); }},
+      {back:true, label:'↩ Voltar à sacola', echo:'Voltar', go:viewCart},
     ]);
   });
 }
 
 function askName(){
-  botSay('Fechado! 🧾 Pra entrega, me passa seu <b>nome completo</b>.', ()=>{
-    textInput('Seu nome...', v=>{ order.nome=v; askAddress(); });
+  botSay('Show! Pra começar, qual seu <b>nome</b>? 😊', ()=>{
+    textInput('Seu nome...', v=>{ order.nome=v; order.entrega==='Retirada' ? pickStore() : askCep(); });
   });
 }
-function askAddress(){
-  botSay('Valeu, '+esc(order.nome.split(' ')[0])+'! Agora o <b>endereço completo</b>: rua, número, bairro, cidade e CEP.', ()=>{
-    textInput('Endereço de entrega...', v=>{ order.endereco=v; askRef(); });
+
+/* Entrega: CEP + ViaCEP */
+function askCep(){
+  botSay('Valeu, '+esc(order.nome.split(' ')[0])+'! Qual o seu <b>CEP</b>? (só os números) 📮', ()=>{
+    textInput('Ex: 73270000', v=>lookupCep(v));
+  });
+}
+function lookupCep(raw){
+  const cep = (raw||'').replace(/\D/g,'');
+  if(cep.length!==8){ botSay('❌ O CEP precisa ter 8 números. Pode digitar de novo?', askCep); return; }
+  order.cep = cep;
+  botSay('Só um segundo, tô buscando seu endereço… 🔎', ()=>{
+    fetch('https://viacep.com.br/ws/'+cep+'/json/')
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.erro){ botSay('❌ Não achei esse CEP. Pode conferir e mandar de novo?', askCep); return; }
+        order.logradouro=d.logradouro||''; order.bairro=d.bairro||'';
+        order.cidade=d.localidade||''; order.uf=d.uf||'';
+        confirmAddr();
+      })
+      .catch(()=>{
+        botSay('Não consegui puxar o CEP agora. 😕 Me manda o <b>endereço completo</b> (rua, número, bairro, cidade).', ()=>{
+          textInput('Endereço completo...', v=>{ order.logradouro=v; order.bairro=''; order.cidade=''; order.uf=''; askCompl(); });
+        });
+      });
+  }, 700);
+}
+function confirmAddr(){
+  const l1 = order.logradouro ? esc(order.logradouro) : '(sem logradouro no CEP — a gente confirma no número)';
+  botSay('Achei aqui! 📍\n<b>'+l1+'</b>\n'+esc(order.bairro)+' — '+esc(order.cidade)+'-'+esc(order.uf)+'\n\nConfere?', ()=>{
+    buttons([
+      {num:'1', label:'✅ Confere', echo:'Confere', go:askNumero},
+      {num:'2', label:'🔄 Corrigir CEP', echo:'Corrigir CEP', go:askCep},
+    ]);
+  });
+}
+function askNumero(){
+  botSay('Qual o <b>número</b>? 🏠\n<i style="color:#8696a0">(se a rua não apareceu, escreve rua + número)</i>', ()=>{
+    textInput('Ex: 123', v=>{ order.numero=v; askCompl(); });
+  });
+}
+function askCompl(){
+  botSay('Tem <b>complemento</b>? (apto, bloco… ou escreve "não")', ()=>{
+    textInput('Ex: apto 101', v=>{ order.complemento=v; askRef(); });
   });
 }
 function askRef(){
-  botSay('Tem algum <b>ponto de referência</b> pra facilitar pro entregador? (se não tiver, escreve "não")', ()=>{
+  botSay('E um <b>ponto de referência</b> pra facilitar pro entregador? (se não tiver, escreve "não")', ()=>{
     textInput('Ponto de referência...', v=>{ order.ref=v; summary(); });
   });
 }
 
+/* Retirada: escolher ponto */
+function pickStore(){
+  botSay('Beleza, '+esc(order.nome.split(' ')[0])+'! Em qual ponto você quer <b>retirar</b>? 🏬', ()=>{
+    const items = STORES.filter(s=>s.retirada).map(s=>({
+      label:s.emoji+' '+s.nome+' · '+s.regiao, echo:s.nome,
+      go:()=>{ order.loja=s; summary(); }
+    }));
+    items.push({back:true, label:'↩ Voltar', echo:'Voltar', go:startCheckout});
+    buttons(items);
+  });
+}
+
+/* Resumo + fechamento */
 function summary(){
-  let total=0;
-  let lista = cart.map(i=>{ total += i.preco*i.qtd; return '• '+i.qtd+'x '+i.nome+' '+i.volume+' — '+BRL(i.preco*i.qtd); }).join('\n');
+  const lista = cart.map(i=>'• '+i.qtd+'x '+i.nome+' '+i.volume+' — '+BRL(i.preco*i.qtd)).join('\n');
+  let bloco;
+  if(order.entrega==='Retirada'){
+    bloco = '🏬 <b>Retirada:</b> '+esc(order.loja.nome)+'\n'+esc(order.loja.regiao)+' · '+esc(order.loja.horario);
+  } else {
+    const semNao = t => (t && t.toLowerCase()!=='não' && t.toLowerCase()!=='nao');
+    const cidadeUf = (order.cidade && order.uf) ? (order.cidade+'-'+order.uf) : '';
+    const linha2 = [order.bairro, cidadeUf].filter(Boolean).join(' — ');
+    bloco = '🛵 <b>Entrega:</b>\n' + esc(order.logradouro) + ', ' + esc(order.numero||'') +
+            (semNao(order.complemento) ? ' ('+esc(order.complemento)+')' : '') +
+            (linha2 ? '\n'+esc(linha2) : '') +
+            (order.cep ? '\nCEP '+esc(order.cep) : '') +
+            (semNao(order.ref) ? '\n📌 '+esc(order.ref) : '');
+  }
   const html =
     'Deixa eu repetir tudo pra não pisar na bola:\n\n' +
     '🛒 <b>Pedido</b>\n'+lista+'\n\n' +
-    '<b>Total: '+BRL(total)+'</b>\n\n' +
-    '👤 '+esc(order.nome)+'\n' +
-    '📍 '+esc(order.endereco)+'\n' +
-    '📌 '+esc(order.ref)+'\n\n' +
+    '<b>Total: '+BRL(cartTotal())+'</b>\n\n' +
+    '👤 '+esc(order.nome)+'\n' + bloco + '\n\n' +
     'Tá tudo certo?';
   botSay(html, ()=>{
     buttons([
-      {num:'1', label:'Confirmar pedido', go:closing},
-      {num:'2', label:'Recomeçar', echo:'Recomeçar', go:resetFlow},
+      {num:'1', label:'✅ Confirmar pedido', echo:'Confirmar', go:closing},
+      {num:'2', label:'🔄 Corrigir', echo:'Corrigir', go:startCheckout},
+      {num:'3', label:'Recomeçar', echo:'Recomeçar', go:resetFlow},
     ]);
   });
 }
@@ -346,12 +504,13 @@ function summary(){
 function closing(){
   botSeq([
     'Pedido anotado, parceiro(a)! 🤝',
-    'Já já um de nós aqui da Remedin te chama nesse mesmo zap pra confirmar tudo, combinar o <b>pagamento</b> e a <b>entrega</b>. 🍃\n\nUm abraço e valeu pela preferência!'
+    'Já já um de nós aqui da Remedin te chama nesse mesmo zap pra confirmar tudo, combinar o <b>pagamento</b> e a '+(order.entrega==='Retirada'?'<b>retirada</b>':'<b>entrega</b>')+'. 🍃\n\nUm abraço e valeu pela preferência!'
   ], ()=>{
     buttons([{num:'1', label:'Fazer um novo pedido', echo:'Novo pedido', go:resetFlow}]);
   });
 }
 
+/* ---------- Institucional ---------- */
 function about(){
   botSeq([
     'A Remedin nasceu das mãos de um casal de mineiros que mora há vinte anos em Brasília. 🪕',
@@ -366,7 +525,8 @@ function about(){
 }
 
 function where(){
-  botSay('A gente é de <b>Brasília-DF</b> e entrega o santo remédio na sua casa. 🚚 Encontra também por aqui:\n\n📷 Instagram: @remedincachaca\n🌐 Site: remedincachaca.com.br', ()=>{
+  const lista = STORES.map(s=> s.emoji+' <b>'+s.nome+'</b>\n'+s.regiao+' · '+s.horario ).join('\n\n');
+  botSay('📍 <b>Onde encontrar a Remedin</b> (Brasília-DF)\n\n'+lista+'\n\nE claro: a gente também <b>entrega</b> na sua casa. 🚚', ()=>{
     buttons([
       {num:'1', label:'Ver o catálogo', go:catalog},
       {back:true, label:'↩ Voltar ao menu', echo:'Voltar', go:backToMenu},
